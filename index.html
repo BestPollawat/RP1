@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เบิกอุปกรณ์</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--tx:#1d2330;--mut:#667085;--ac:#e8590c;--acs:#fff1e8;--bd:#e3e6eb;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--card:#1e232b;--tx:#eef0f3;--mut:#9aa3b0;--ac:#ff8a4c;--acs:#3a2518;--bd:#2f3640;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171c;--card:#1e232b;--tx:#eef0f3;--mut:#9aa3b0;--ac:#ff8a4c;--acs:#3a2518;--bd:#2f3640;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font-family:'Noto Sans Thai',system-ui,sans-serif;padding-bottom:90px}
+header{padding:18px 16px 8px;max-width:760px;margin:auto}h1{margin:0;font-size:22px}header p{margin:4px 0 0;color:var(--mut);font-size:14px}
+.wrap{max-width:760px;margin:auto;padding:0 16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media(max-width:480px){.row{grid-template-columns:1fr}}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:4px}
+input,textarea{width:100%;font:inherit;font-size:16px;padding:10px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:9px 14px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
+.tab.on{background:var(--ac);border-color:var(--ac);color:#fff;font-weight:600}
+.tab b{font-size:12px;margin-left:4px;background:var(--acs);color:var(--ac);border-radius:9px;padding:1px 7px}.tab.on b{background:#fff3}.tab.on b{color:#fff}
+.item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--bd)}.item:last-child{border:0}
+.item span{font-size:16px;flex:1}.item.sel span{font-weight:600}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:40px;height:40px;border-radius:10px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:22px;cursor:pointer}
+.qty button.add{background:var(--ac);border-color:var(--ac);color:#fff;font-size:15px;width:auto;padding:0 16px;font-family:inherit}
+.qty input{width:56px;text-align:center;padding:8px 4px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--bd);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;align-items:center;justify-content:space-between;z-index:5}
+.btn{border:0;background:var(--ac);color:#fff;font:inherit;font-weight:600;padding:12px 20px;border-radius:12px;cursor:pointer;font-size:16px}.btn.sec{background:var(--acs);color:var(--ac)}.btn:disabled{opacity:.4}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:flex-end;justify-content:center;z-index:10}.modal.show{display:flex}
+.sheet{background:var(--bg);width:100%;max-width:760px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px}
+.sheet h2{margin:0 0 8px;font-size:19px}.ln{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--bd);gap:8px}
+.ln small{color:var(--mut)}.rm{background:none;border:0;color:#d92d20;font-size:14px;cursor:pointer;font-family:inherit}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1d2330;color:#fff;padding:10px 18px;border-radius:10px;display:none;z-index:20}
+.empty{color:var(--mut);text-align:center;padding:24px 0}
+</style></head><body>
+<header><h1>🧰 เบิกอุปกรณ์</h1><p>เลือกหมวด → กดเพิ่มสิ่งที่ต้องการ → กด "ตรวจสอบรายการ"</p></header>
+<div class="wrap">
+ <div class="card"><div class="row">
+  <div><label>ชื่อผู้เบิก *</label><input id="who" placeholder="ชื่อของคุณ"></div>
+  <div><label>หน้างาน / โครงการ</label><input id="site" placeholder="เช่น บ้านคุณสมชาย"></div></div></div>
+ <input id="q" type="search" placeholder="🔍 ค้นหาอุปกรณ์ทุกหมวด...">
+ <div class="tabs" id="tabs"></div>
+ <div class="card" id="list"></div>
+</div>
+<div class="bar"><div><b id="cnt">0</b> รายการ</div><button class="btn" id="review" disabled>ตรวจสอบรายการ</button></div>
+<div class="modal" id="md"><div class="sheet">
+ <h2>สรุปรายการเบิก</h2><div id="sum"></div>
+ <div style="margin:12px 0"><label>หมายเหตุ (ถ้ามี)</label><textarea id="note" rows="2"></textarea></div>
+ <div style="display:flex;gap:8px;flex-wrap:wrap">
+  <button class="btn" id="send" style="flex:1;display:none">✅ ส่งใบเบิก</button>
+  <button class="btn sec" id="copy" style="flex:1">📋 คัดลอกรายการ</button>
+  <button class="btn sec" id="open" style="flex:1">📄 เปิดชีต</button>
+  <button class="btn sec" id="close">กลับไปแก้ไข</button></div>
+ <p style="font-size:13px;color:var(--mut)">กด "คัดลอกรายการ" แล้ววางในชีต / กลุ่มไลน์ของทีม</p>
+</div></div>
+<div class="toast" id="toast"></div>
+<script>
+const SHEET="https://docs.google.com/spreadsheets/d/11iGD3IxXbhmlAkGvF7G_fjwkNSEJUnSHv4bik-LjHaM/edit?usp=sharing";
+let D={
+"โครงสร้าง":["เหล็กกล่อง","เหล็กเส้น","เหล็ก c","ปูน","ทราย","หิน"],
+"หลังคา,ฝ้า":["เหล็กกล่อง","เหล็ก c","ซีลาย","ทีซอย","ที่เมน","สกรูดำ","ฉากสังกะสี","แผ่นฝ้ายิปซั่ม","แผ่นฝ้าสมาร์ทบอร์ด","ปูนฉาบยิปซั่ม","ผ้าฉาบ","แผ่นหลังคาเมทัลชีท","แผ่นหลังคาลอนคู่","แผ่นหลังคาซีแพคโมเนีย","แผ่นใสหลังคา","หมวกจีนระบายอากาศ","ลูกหมุนระบายอากาศ","รางน้ำและอุปกรณ์","ไม้เชิงชาย","ไม้มอบ","ท่อน้ำทิ้งรางน้ำฝน"],
+"พื้น":["กระเบื้องพื้นภายใน","กระเบื้องพื้นภายนอก","กระเบื้องพื้นห้องครัว","กระเบื้องพื้นห้องน้ำ","กระเบื้องผนังห้องครัว","กระเบื้องผนังห้องน้ำ","หินดำ,ขาวแต่งสวน","พื้น SPC,พร้อมบัว","พื้นลามิเนต","พื้นไม้","หมายลูกนอนบันได","ไม้ชานพักบันได","หมายลูกตั้งบันได"],
+"ผนัง":["ไม้อัดบิ้วผนังทีวี","ไม้ระแนงเทียมตกแต่งผนัง","โครง c ตกแต่งผนัง","แผ่นยิปซั่ม","แผ่นลามิเนตตกแต่งผนัง","คิ้วสแตนเลส"],
+"สี":["สีทาภายนอก","สีทาภายใน","สีทาฝ้า","สีพิเศษทาตัดผนัง","สีทาเหล็ก","สีกันสนิมเหล็ก","สีทาไม้","ทินเนอร์","น้ำมันสน"],
+"ไฟฟ้า":["สายเมนเบอร์ 10","สายเมนเบอร์ 16","สายเดี่ยวเบอร์ 1.5","สายเดี่ยวเบอร์ 2.5","สายเดี่ยวราว 1.5","สายขาวคู่ 1.5","สายขาวคู่ 2.5","ปลั๊กไฟ","สวิตช์ไฟธรรมดา","สวิตช์ไฟ 2 ทาง","หน้ากาก 1 ช่อง","หน้ากาก 2 ช่อง","หน้ากาก 3 ช่อง","ปลั๊กไฟ outdoor","ตู้ไฟ 4 ช่อง","ตู้ไฟ 6 ช่อง","ตู้ไฟ 8 ช่อง","ตู้ไฟ 10 ช่อง","ตู้ไฟมากกว่า 10 ช่อง","เบรกเกอร์กันดูด","เบรกเกอร์เมน","แท่งกราวด์ 1.8 เมตร","แท่งกราวด์ 2.4 เมตร","แคมป์รัดแท่งกราวด์","หางหนู"],
+"ประปา":["ท่อ PVC 4 หุน","ท่อ PVC 6 หุน","ท่อ PVC 1 นิ้ว","ท่อ PVC 2 นิ้ว","ท่อ PVC 2.5 นิ้ว","ท่อ PVC 3 นิ้ว","ท่อ PVC 4 นิ้ว","ข้อต่อตรง 4 หุน","ข้อต่อตรง 6 หุน","ข้อต่อตรง 1 นิ้ว","ข้อต่อตรง 2.5 นิ้ว","ข้อต่อตรง 3 นิ้ว","ข้อต่อตรง 4 นิ้ว","ข้อต่องอ 90","ปั๊มน้ำ 150 วัตต์","ปั๊มน้ำ 200 วัตต์","ปั๊มน้ำ 250 วัตต์","ปั๊มน้ำ 300 วัตต์","ปั๊มน้ำ 350 วัตต์","แทงค์น้ำ 500 ลิตร","ถังน้ำ 700 ลิตร","ถังน้ำ 1,000 ลิตร","เช็ควาล์ว 4 หุน","เช็ควาล์ว 6 หุน","เช็ควาล์ว 1 นิ้ว","บอลวาล์ว 4 หุน","บอลวาล์ว 6 หุน","บอลวาล์ว 1 นิ้ว","stop valve 1 ทาง","stop valve 2 ทาง"],
+"สุขภัณฑ์":["ชักโครกชิ้นเดียว","ชักโครก 2 ชิ้น","อ่างล้างหน้าแขวน","อ่างล้างหน้ามีขา","สายฉีดชำระ","ฝาชักโครก","โฟร์เดรน ดักกลิ่น","โฟร์เดรนธรรมดา","เครื่องทำน้ำอุ่น","ราวแขวนผ้า","กระจกเงา","ชั้นวางสบู่","ชั้นวางของหน้ากระจก","ก๊อกน้ำเครื่องซักผ้า,ก๊อกสนาม","ก๊อกน้ำล้างพื้น","ก๊อกน้ำฝักบัว","ก๊อกน้ำล้างหน้า","ก๊อกน้ำล้างจาน","สายน้ำดี","ชุดฝักบัวเล็ก","ชุดฝักบัวใหญ่ rain shower","ท่อน้ำทิ้งอ่างล้างจาน","ท่อน้ำทิ้งล้างหน้า"],
+"ประตู,หน้าต่าง":["ประตูไม้จริง 80-200","ประตูไม้จริง 70-200","ประตู PVC 70-200","ประตูไม้อัด 80-200","หน้าต่างไม้เก่า","หน้าต่างอลูมิเนียม","หน้าต่างบานเกล็ดระบายอากาศ","หน้าต่างกระจกบานเกล็ด","ลูกบิดประตูธรรมดา","ลูกบิดประตูห้องน้ำ","ชุดล็อคประตูดิจิตอล","บานพับประตู","กลอนประตู","ชุดล็อคประตูอลูมิเนียม"],
+"เฟอร์นิเจอร์,ครัว":["อ่างล้างจาน 1 หลุม","อ่างล้างจาน 2 หลุม","เตาแก๊ส 1 หัว","เตาแก๊ส 2 หัว","เครื่องดูดควัน","ท่อเฟล็กซ์เครื่องดูดควัน","ชั้นวางจานสแตนเลส","ชั้นวางจานสแตนเลสเจาะแขวน"],
+"เครื่องมือช่าง":["ตู้เชื่อมไฟฟ้า","สว่านไฟฟ้า","สว่านไฟฟ้าขนาดใหญ่","เครื่องแย็ก","ลูกหมูไฟฟ้า","เครื่องตัดไฟเบอร์","เครื่องงูเหล็ก","เลื่อยไม้แบตเตอรี่"]};
+let cats=Object.keys(D);let cur=cats[0],cart={};
+const API=""; // วาง Web app URL จาก Apps Script ตรงนี้
+const $=i=>document.getElementById(i);
+const key=(c,n)=>c+"|"+n;
+function toast(t){const e=$("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",1800)}
+function total(){return Object.keys(cart).length}
+function catCount(c){return Object.keys(cart).filter(k=>k.startsWith(c+"|")).length}
+function tabs(){$("tabs").innerHTML=cats.map((c,i)=>`<button class="tab ${c===cur&&!$("q").value?'on':''}" data-c="${c}">${i+1}. ${c}${catCount(c)?`<b>${catCount(c)}</b>`:''}</button>`).join("")}
+function list(){const s=$("q").value.trim().toLowerCase();let rows=[];
+ cats.forEach(c=>D[c].forEach(n=>{if(s?(n.toLowerCase().includes(s)):c===cur)rows.push([c,n])}));
+ $("list").innerHTML=rows.length?rows.map(([c,n])=>{const k=key(c,n),q=cart[k]||0;
+  return `<div class="item ${q?'sel':''}"><span>${n}${s?`<br><small style="color:var(--mut);font-weight:400">${c}</small>`:''}</span>
+  <div class="qty">${q?`<button data-a="-" data-k="${k}">−</button><input type="number" inputmode="numeric" min="1" value="${q}" data-k="${k}"><button data-a="+" data-k="${k}">+</button>`:`<button class="add" data-a="+" data-k="${k}">+ เพิ่ม</button>`}</div></div>`}).join(""):'<div class="empty">ไม่พบรายการ</div>';
+ tabs();$("cnt").textContent=total();$("review").disabled=!total()}
+$("tabs").onclick=e=>{const b=e.target.closest(".tab");if(b){cur=b.dataset.c;$("q").value="";list();window.scrollTo({top:0})}};
+$("q").oninput=list;
+$("list").onclick=e=>{const b=e.target.closest("button[data-a]");if(!b)return;const k=b.dataset.k;
+ if(b.dataset.a==="+")cart[k]=(cart[k]||0)+1;else{cart[k]--;if(cart[k]<1)delete cart[k]}list()};
+$("list").onchange=e=>{if(e.target.tagName==="INPUT"){const v=parseInt(e.target.value);if(v>0)cart[e.target.dataset.k]=v;else delete cart[e.target.dataset.k];list()}};
+function sum(){const ks=Object.keys(cart);$("sum").innerHTML=ks.length?ks.map(k=>{const[c,n]=k.split("|");return `<div class="ln"><div>${n}<br><small>${c}</small></div><div><b>× ${cart[k]}</b> <button class="rm" data-k="${k}">ลบ</button></div></div>`}).join(""):'<div class="empty">ยังไม่มีรายการ</div>'}
+$("review").onclick=()=>{if(!$("who").value.trim()){$("who").focus();toast("กรุณากรอกชื่อผู้เบิก");window.scrollTo({top:0,behavior:"smooth"});return}sum();$("md").classList.add("show")};
+$("close").onclick=()=>{$("md").classList.remove("show");list()};
+$("sum").onclick=e=>{const b=e.target.closest(".rm");if(b){delete cart[b.dataset.k];sum();list();if(!total())$("md").classList.remove("show")}};
+function text(){const d=new Date().toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"});
+ let t=`ใบเบิกอุปกรณ์\nวันที่: ${d}\nผู้เบิก: ${$("who").value}\nหน้างาน: ${$("site").value||"-"}\n\n`;
+ let i=1;cats.forEach(c=>{Object.keys(cart).filter(k=>k.startsWith(c+"|")).forEach(k=>{t+=`${i++}. [${c}] ${k.split("|")[1]} x ${cart[k]}\n`})});
+ if($("note").value.trim())t+=`\nหมายเหตุ: ${$("note").value.trim()}`;return t}
+$("copy").onclick=async()=>{const t=text();try{await navigator.clipboard.writeText(t);toast("คัดลอกแล้ว ✓")}catch(e){const a=document.createElement("textarea");a.value=t;document.body.appendChild(a);a.select();try{document.execCommand("copy");toast("คัดลอกแล้ว ✓")}catch(_){toast("คัดลอกไม่สำเร็จ")}a.remove()}};
+$("open").onclick=()=>window.open(SHEET,"_blank","noopener");
+try{$("who").value=localStorage.getItem("who")||""}catch(e){}
+$("who").onchange=()=>{try{localStorage.setItem("who",$("who").value)}catch(e){}};
+if(API){$("send").style.display="block";
+ fetch(API+"?action=items").then(r=>r.json()).then(j=>{if(j&&Object.keys(j).length){D=j;cats=Object.keys(D);cur=cats[0];list()}}).catch(()=>{});}
+$("send").onclick=async()=>{const b=$("send");b.disabled=true;b.textContent="กำลังส่ง...";
+ const items=Object.keys(cart).map(k=>{const[c,n]=k.split("|");return{cat:c,name:n,qty:cart[k]}});
+ try{const r=await fetch(API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({who:$("who").value,site:$("site").value,note:$("note").value,items})});
+  const j=await r.json();if(!j.ok)throw 0;toast("ส่งใบเบิกเรียบร้อย ✓");cart={};$("note").value="";$("md").classList.remove("show");list()}
+ catch(e){toast("ส่งไม่สำเร็จ ลองคัดลอกรายการแทน")}
+ b.disabled=false;b.textContent="✅ ส่งใบเบิก"};
+list();
+</script></body></html>
